@@ -1,0 +1,4 @@
+build
+dist
+seqrep_py.egg-info
+__pycache__
