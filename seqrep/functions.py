@@ -77,7 +77,7 @@ def get_match_str(a,b):
     string_val = ''.join(list_val)
     return string_val
 
-def gen_aligned_seqs(a, overhangs=50):
+def gen_aligned_seqs(a):
     '''
     Generate formatted strings from the alignment object generated
     by skbio.sequence.DNA
@@ -95,11 +95,10 @@ def gen_aligned_seqs(a, overhangs=50):
 
     # The overhang length could be limited by the positioning of the aligned
     # regions within the query and target sequences
-    start_overhang = min(a.query_begin, a.target_begin, overhangs)
+    start_overhang = min(a.query_begin, a.target_begin)
 
     end_overhang = min(len(a.query_sequence) - 1 - a.query_end,
-        len(a.target_sequence) - 1 - a.target_end_optimal,
-        overhangs)
+        len(a.target_sequence) - 1 - a.target_end_optimal)
 
     # Get the overhanging strings
     query_overhangs = [
@@ -112,16 +111,38 @@ def gen_aligned_seqs(a, overhangs=50):
         a.target_sequence[a.target_end_optimal+1:a.target_end_optimal+end_overhang]
     ]
 
+
     # Add the overhangs to the aligned sequences
     query_sequence_ex = a.aligned_query_sequence.join(query_overhangs)
     target_sequence_ex = a.aligned_target_sequence.join(target_overhangs)
+
+    #Fully extend sequences into 3' and 5', filling in the shorter ends with '-'
+    if a.query_begin > a.target_begin:
+        fragment_to_add = a.query_sequence[0:a.query_begin-start_overhang]
+        query_sequence_ex = fragment_to_add + query_sequence_ex
+        target_sequence_ex = len(fragment_to_add) * '-' + target_sequence_ex
+
+    if a.query_begin < a.target_begin:
+        fragment_to_add = a.target_sequence[0:a.target_begin-start_overhang]
+        target_sequence_ex = a.target_sequence[0:a.target_begin-start_overhang] + target_sequence_ex
+        query_sequence_ex = len(fragment_to_add) * '-' + query_sequence_ex
+
+    if len(a.query_sequence) - 1 - a.query_end > len(a.target_sequence) - 1 - a.target_end_optimal:
+        fragment_to_add = a.query_sequence[len(a.query_sequence) - 1 - a.query_end:len(a.query_sequence) - 1]
+        query_sequence_ex += fragment_to_add
+        target_sequence_ex += len(fragment_to_add) * '-'
+
+    if len(a.query_sequence) - 1 - a.query_end < len(a.target_sequence) - 1 - a.target_end_optimal:
+        fragment_to_add = a.target_sequence[len(a.target_sequence) - 1 - a.target_end_optimal:len(a.target_sequence) - 1]
+        target_sequence_ex += fragment_to_add
+        query_sequence_ex += len(fragment_to_add) * '-'
 
     # Generate the match string
     match_str = get_match_str(query_sequence_ex, target_sequence_ex)
 
     return query_sequence_ex, target_sequence_ex, match_str
 
-def gen_reports(sequencing_dir, wb, line_length=60):
+def gen_reports(sequencing_dir, wb, line_length=100):
     '''
     Take an excel spreadsheet containing alignment inputs, generate the alignments, 
     and produce a .pdf file for each alignment

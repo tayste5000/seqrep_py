@@ -4,7 +4,7 @@ import os, sys
 from openpyxl import load_workbook
 import subprocess
 
-__version__ = "0.0.1"
+__version__ = "0.0.2"
 
 def main():
     # Get command line arguments
@@ -30,7 +30,7 @@ def main():
         
         wb = load_workbook(os.path.join(args.sequencing_dir,'report.xlsx'))
 
-        gen_reports(args.sequencing_dir, wb, line_length=60)
+        gen_reports(args.sequencing_dir, wb)
 
     # If the -edit argument was specified, only generate the spreadsheet and then open it
     elif args.edit:
@@ -44,4 +44,4 @@ def main():
 
         wb = prep_excel(args.sequencing_dir, files, args.template_seq, excel_name)
 
-        gen_reports(args.sequencing_dir, wb, line_length=60)
+        gen_reports(args.sequencing_dir, wb)
